@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI Meeting Sim</title>
+
+<style>
+/* ── Meeting Sim: Squarespace Embed ── */
+.lx-wrap{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:0 auto;color:#1A1714}
+.lx-wrap *{box-sizing:border-box;margin:0;padding:0}
+
+.lx-sim{background:#FFFDF9;border:1px solid #E4DED4;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.05)}
+.lx-bar{background:#0F0D0B;padding:10px 16px;display:flex;align-items:center;gap:8px}
+.lx-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.lx-dot.r{background:#FF5F57}.lx-dot.y{background:#FEBC2E}.lx-dot.g{background:#28C840}
+.lx-bar-title{font-size:12px;color:rgba(255,255,255,.6);margin-left:8px;font-weight:500}
+.lx-live{margin-left:auto;font-size:10px;color:#FF6B6B;font-weight:700;display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.06em}
+.lx-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#FF6B6B;animation:lxPulse 1.5s ease infinite}
+@keyframes lxPulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.lx-chat{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.lx-msg{display:flex;gap:10px}
+.lx-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:600;color:#fff;background:#3B82F6}
+.lx-bubble{flex:1;min-width:0}
+.lx-name{font-size:10px;font-weight:700;color:#8C8074;margin-bottom:3px}
+.lx-text{font-size:13px;color:#1A1714;line-height:1.65}
+
+.lx-thought{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#FEF3C7;border-radius:8px;border-left:3px solid #D97706;transition:background .4s,border-color .4s}
+.lx-thought-icon{font-size:14px;flex-shrink:0}
+.lx-thought-text{font-size:12px;color:#92400E;font-style:italic;line-height:1.5;transition:opacity .2s ease}
+
+.lx-hint{font-size:12px;color:#8C8074;text-align:center;padding:8px 0 4px;border-top:1px solid #E4DED4}
+.lx-hint strong{color:#5C5650}
+
+/* ── Jargon terms ── */
+.lx-j{position:relative;display:inline;cursor:pointer;font-weight:600;background:linear-gradient(to bottom,transparent 60%,rgba(220,38,38,.15) 60%);transition:all .25s ease;border-radius:2px;border:none;font-family:inherit;font-size:inherit;color:inherit;line-height:inherit;padding:0}
+.lx-j:hover{background:linear-gradient(to bottom,transparent 60%,rgba(220,38,38,.3) 60%)}
+.lx-j.done{background:linear-gradient(to bottom,transparent 60%,rgba(5,150,105,.2) 60%);color:#059669}
+.lx-j.done:hover{background:linear-gradient(to bottom,transparent 60%,rgba(5,150,105,.35) 60%)}
+.lx-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);background:#1A1714;color:#fff;font-size:12px;font-weight:400;padding:8px 12px;border-radius:8px;white-space:normal;width:max-content;max-width:240px;line-height:1.5;opacity:0;pointer-events:none;transition:all .18s ease;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.2);font-style:normal;text-align:left}
+.lx-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1A1714}
+.lx-j:hover .lx-tip,.lx-j:focus .lx-tip{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all}
+
+/* ── Confidence meter ── */
+.lx-conf{margin-top:20px}
+.lx-conf-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.lx-conf-label{font-size:12px;font-weight:700;color:#5C5650;text-transform:uppercase;letter-spacing:.07em}
+.lx-conf-count{font-size:12px;color:#8C8074;font-weight:500}
+.lx-conf-track{height:6px;background:#E4DED4;border-radius:100px;overflow:hidden}
+.lx-conf-fill{height:100%;border-radius:100px;transition:width .5s cubic-bezier(.4,0,.2,1),background .5s ease;width:0}
+.lx-conf-fill.low{background:linear-gradient(90deg,#DC2626,#F87171)}
+.lx-conf-fill.mid{background:linear-gradient(90deg,#F59E0B,#FCD34D)}
+.lx-conf-fill.high{background:linear-gradient(90deg,#059669,#34D399)}
+.lx-conf-msg{font-size:12px;color:#8C8074;margin-top:6px;min-height:18px;transition:color .3s}
+.lx-conf-msg.win{color:#059669;font-weight:600}
+
+/* ── Toast ── */
+.lx-toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#059669;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:100px;z-index:9999;pointer-events:none;opacity:0;transform:translateY(6px);transition:all .2s}
+.lx-toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Mobile ── */
+@media(max-width:600px){
+  .lx-chat{padding:12px 14px;gap:10px}
+  .lx-avatar{width:28px;height:28px;font-size:10px}
+  .lx-tip{max-width:180px;font-size:11px;left:0;transform:translateX(0) translateY(4px)}
+  .lx-j:hover .lx-tip,.lx-j:focus .lx-tip{transform:translateX(0) translateY(0)}
+  .lx-tip::after{left:20px;transform:none}
+}
+</style>
+
+</head>
+
+<body style="margin:0; background:#FFFDF9;">
+
+<div class="lx-wrap">
+  <div class="lx-sim">
+    <div class="lx-bar">
+      <span class="lx-dot r"></span>
+      <span class="lx-dot y"></span>
+      <span class="lx-dot g"></span>
+      <span class="lx-bar-title">AI Strategy Sync</span>
+      <span class="lx-live">Live</span>
+    </div>
+    <div class="lx-chat">
+      <div class="lx-msg">
+        <div class="lx-avatar">M</div>
+        <div class="lx-bubble">
+          <div class="lx-name">Marcus &mdash; Engineering Lead</div>
+          <div class="lx-text">&ldquo;Yeah, we can just use
+            <span class="lx-j" data-k="rag" tabindex="0" onclick="lxDecode(this)">RAG<span class="lx-tip">Giving AI access to your company docs so it can look things up before answering</span></span>
+            to optimize retrieval from the
+            <span class="lx-j" data-k="latent" tabindex="0" onclick="lxDecode(this)">latent space<span class="lx-tip">The internal &ldquo;map&rdquo; where AI organizes concepts by similarity</span></span>.
+            We might need some
+            <span class="lx-j" data-k="finetune" tabindex="0" onclick="lxDecode(this)">fine-tuning<span class="lx-tip">Teaching an existing model new tricks with your own examples</span></span>
+            on the
+            <span class="lx-j" data-k="embed" tabindex="0" onclick="lxDecode(this)">embeddings<span class="lx-tip">Converting words into numbers so AI can measure how related they are</span></span>
+            to reduce
+            <span class="lx-j" data-k="halluc" tabindex="0" onclick="lxDecode(this)">hallucinations<span class="lx-tip">When AI confidently makes something up that sounds true but isn&rsquo;t</span></span>,
+            but it should only cost a few million
+            <span class="lx-j" data-k="token" tabindex="0" onclick="lxDecode(this)">tokens<span class="lx-tip">A chunk of text (roughly &frac34; of a word) &mdash; the unit AI actually reads</span></span>.&rdquo;</div>
+        </div>
+      </div>
+      <div class="lx-thought" id="lxThought">
+        <span class="lx-thought-icon">&#x1F4AD;</span>
+        <span class="lx-thought-text" id="lxThoughtTxt">What is RAG? Should I ask? &hellip; Just nod.</span>
+      </div>
+    </div>
+    <div class="lx-hint"><strong>Click any highlighted term</strong> to decode it</div>
+  </div>
+
+  <div class="lx-conf">
+    <div class="lx-conf-top">
+      <span class="lx-conf-label">Your confidence</span>
+      <span class="lx-conf-count" id="lxCount">0 / 6 decoded</span>
+    </div>
+    <div class="lx-conf-track">
+      <div class="lx-conf-fill low" id="lxFill"></div>
+    </div>
+    <div class="lx-conf-msg" id="lxMsg">Click the jargon above to see what it actually means</div>
+  </div>
+  <div class="lx-toast" id="lxToast"></div>
+</div>
+
+<script>
+(function(){
+  var decoded = {}, total = 6, done = 0;
+
+  var thoughts = [
+    'What is RAG? Should I ask? \u2026 Just nod.',
+    'I think tokens are like words? Maybe?',
+    'Everyone else seems to get this\u2026',
+    'Should I google this during the meeting?',
+    'I\u2019ll just wait for the summary email.',
+    'Am I the only one lost here?'
+  ];
+  var tIdx = 0;
+  var thoughtEl = document.getElementById('lxThoughtTxt');
+
+  var rotateId = setInterval(function(){
+    tIdx = (tIdx + 1) % thoughts.length;
+    if (thoughtEl) {
+      thoughtEl.style.opacity = '0';
+      setTimeout(function(){ thoughtEl.textContent = thoughts[tIdx]; thoughtEl.style.opacity = '1'; }, 200);
+    }
+  }, 3500);
+
+  var msgs = [
+    '',
+    'Nice. One down, keep going.',
+    'You\u2019re getting the hang of it.',
+    'Halfway there. The jargon is melting away.',
+    'Almost fluent. A few more to go.',
+    'Looking good. One more!',
+    'You just decoded an entire AI meeting.'
+  ];
+
+  window.lxDecode = function(el){
+    var k = el.getAttribute('data-k');
+    if (decoded[k]) return;
+    decoded[k] = true;
+    el.classList.add('done');
+    done++;
+
+    var pct = Math.round((done / total) * 100);
+    var fill = document.getElementById('lxFill');
+    var count = document.getElementById('lxCount');
+    var msg = document.getElementById('lxMsg');
+
+    if (fill) {
+      fill.style.width = pct + '%';
+      fill.className = 'lx-conf-fill ' + (pct < 40 ? 'low' : pct < 80 ? 'mid' : 'high');
+    }
+    if (count) count.textContent = done + ' / ' + total + ' decoded';
+
+    if (done === 1) { clearInterval(rotateId); if (thoughtEl) thoughtEl.textContent = 'Oh wait, that actually makes sense\u2026'; }
+    if (done === 3 && thoughtEl) thoughtEl.textContent = 'Okay, I\u2019m starting to follow this.';
+    if (done === 5 && thoughtEl) thoughtEl.textContent = 'I could actually contribute to this conversation!';
+
+    if (msg) {
+      msg.textContent = msgs[done] || '';
+      if (done === total) {
+        msg.classList.add('win');
+        clearInterval(rotateId);
+        if (thoughtEl) thoughtEl.textContent = 'Wait \u2014 I actually understood all of that.';
+        var tb = document.getElementById('lxThought');
+        if (tb) { tb.style.background = '#F0FDF4'; tb.style.borderLeftColor = '#059669'; }
+      }
+    }
+
+    var toast = document.getElementById('lxToast');
+    if (toast) {
+      toast.textContent = '\u2713 Decoded: ' + el.childNodes[0].textContent;
+      toast.classList.add('show');
+      setTimeout(function(){ toast.classList.remove('show'); }, 1500);
+    }
+  };
+})();
+</script>
+
+</body>
+</html>
